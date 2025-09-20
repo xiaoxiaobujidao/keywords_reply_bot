@@ -71,3 +71,4 @@ temp/
 # Backup files
 *.bak
 *.backup
+bot_token
