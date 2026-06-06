@@ -1,11 +1,14 @@
 use frankenstein::client_reqwest::Bot;
 use frankenstein::types::{Message, ChatMember, MessageEntityType};
-use frankenstein::methods::{SendMessageParams, GetChatMemberParams};
+use frankenstein::methods::{SendMessageParams, GetChatMemberParams, DeleteMessageParams};
 use frankenstein::ParseMode;
 use frankenstein::AsyncTelegramApi;
 use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, Set, QueryFilter, ColumnTrait};
 use anyhow::Result;
+use std::time::Duration;
 use crate::entities::group_reply::{self, Entity as GroupReplyEntity};
+
+const AUTO_DELETE_AFTER_SECS: u64 = 40;
 
 #[derive(Clone)]
 pub struct MessageHandler {
@@ -397,8 +400,23 @@ impl MessageHandler {
             .parse_mode(ParseMode::Html)
             .build();
             
-        if let Err(e) = api.send_message(&reply_params).await {
-            eprintln!("发送回复时出错: {}", e);
+        match api.send_message(&reply_params).await {
+            Ok(response) => {
+                let message_id = response.result.message_id;
+                tokio::spawn(async move {
+                    tokio::time::sleep(Duration::from_secs(AUTO_DELETE_AFTER_SECS)).await;
+                    let delete_params = DeleteMessageParams::builder()
+                        .chat_id(chat_id)
+                        .message_id(message_id)
+                        .build();
+                    if let Err(e) = api.delete_message(&delete_params).await {
+                        eprintln!("自动删除消息时出错: {}", e);
+                    }
+                });
+            }
+            Err(e) => {
+                eprintln!("发送回复时出错: {}", e);
+            }
         }
         
         Ok(())
