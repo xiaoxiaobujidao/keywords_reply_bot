@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-frankenstein = { version = "0.44", features = ["client-reqwest"] }
+frankenstein = { version = "0.50", features = ["client-reqwest"] }
 sea-orm = { version = "1", features = [ "sqlx-sqlite", "runtime-tokio-rustls", "macros" ] }
 sea-orm-migration = { version = "1", features = [ "sqlx-sqlite", "runtime-tokio-rustls" ] }
 tokio = { version = "1", features = ["full"] }
