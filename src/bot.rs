@@ -1,10 +1,10 @@
+use crate::handlers::MessageHandler;
+use anyhow::Result;
+use frankenstein::AsyncTelegramApi;
 use frankenstein::client_reqwest::Bot;
 use frankenstein::methods::GetUpdatesParams;
 use frankenstein::updates::UpdateContent;
-use frankenstein::AsyncTelegramApi;
 use sea_orm::DatabaseConnection;
-use anyhow::Result;
-use crate::handlers::MessageHandler;
 
 pub struct BotManager {
     api: Bot,
@@ -16,24 +16,25 @@ impl BotManager {
     pub fn new(bot_token: &str, db: DatabaseConnection) -> Self {
         let api = Bot::new(bot_token);
         let message_handler = MessageHandler::new(db.clone());
-        
+
         BotManager {
             api,
             db,
             message_handler,
         }
     }
-    
+
     pub fn get_database(&self) -> &DatabaseConnection {
         &self.db
     }
-    
+
     pub async fn validate_token(&self) -> Result<()> {
         match self.api.get_me().await {
             Ok(response) => {
                 let user = response.result;
-                println!("机器人信息: @{} ({})", 
-                    user.username.unwrap_or_default(), 
+                println!(
+                    "机器人信息: @{} ({})",
+                    user.username.unwrap_or_default(),
                     user.first_name
                 );
                 Ok(())
@@ -45,10 +46,10 @@ impl BotManager {
             }
         }
     }
-    
+
     pub async fn start_listening(&self) -> Result<()> {
         let mut update_params = GetUpdatesParams::builder().build();
-        
+
         loop {
             match self.api.get_updates(&update_params).await {
                 Ok(response) => {
@@ -56,7 +57,7 @@ impl BotManager {
                         if let UpdateContent::Message(message) = update.content {
                             let api_clone = self.api.clone();
                             let handler = self.message_handler.clone();
-                            
+
                             tokio::spawn(async move {
                                 if let Err(e) = handler.handle_message(api_clone, *message).await {
                                     eprintln!("处理消息时出错: {}", e);
