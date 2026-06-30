@@ -45,7 +45,7 @@ impl MessageHandler {
                     let content = self.get_content_after_command(message, &command)?;
                     
                     if content.is_empty() {
-                        self.send_reply(api, message.chat.id, "用法: /add &lt;关键词&gt; &lt;回复内容&gt;").await?;
+                        self.send_reply(api, message.chat.id, "用法: /add &lt;关键词&gt; &lt;回复内容&gt;", None).await?;
                         return Ok(());
                     }
                     
@@ -56,13 +56,13 @@ impl MessageHandler {
                         let reply_content = content[pos + 1..].to_string();
                         
                         if keywords.is_empty() || reply_content.is_empty() {
-                            self.send_reply(api, message.chat.id, "用法: /add &lt;关键词&gt; &lt;回复内容&gt;").await?;
+                            self.send_reply(api, message.chat.id, "用法: /add &lt;关键词&gt; &lt;回复内容&gt;", None).await?;
                             return Ok(());
                         }
                         
                         // 检查用户是否为管理员
                         if !self.is_admin(&api, message).await? {
-                            self.send_reply(api, message.chat.id, "只有管理员才能使用此命令").await?;
+                            self.send_reply(api, message.chat.id, "只有管理员才能使用此命令", None).await?;
                             return Ok(());
                         }
                         
@@ -76,22 +76,22 @@ impl MessageHandler {
                         } else {
                             format!("关键词 <code>{}</code> 回复已添加成功！", keywords)
                         };
-                        self.send_reply(api, message.chat.id, &message_text).await?;
+                        self.send_reply(api, message.chat.id, &message_text, None).await?;
                     } else {
-                        self.send_reply(api, message.chat.id, "用法: /add &lt;关键词&gt; &lt;回复内容&gt;").await?;
+                        self.send_reply(api, message.chat.id, "用法: /add &lt;关键词&gt; &lt;回复内容&gt;", None).await?;
                         return Ok(());
                     }
                 }
                 "/del" => {
                     let content = self.get_content_after_command(message, &command)?;
                     if content.is_empty() {
-                        self.send_reply(api, message.chat.id, "用法: /del &lt;关键词&gt;").await?;
+                        self.send_reply(api, message.chat.id, "用法: /del &lt;关键词&gt;", None).await?;
                         return Ok(());
                     }
                     
                     // 检查用户是否为管理员
                     if !self.is_admin(&api, message).await? {
-                        self.send_reply(api, message.chat.id, "只有管理员才能使用此命令").await?;
+                        self.send_reply(api, message.chat.id, "只有管理员才能使用此命令", None).await?;
                         return Ok(());
                     }
                     
@@ -100,14 +100,14 @@ impl MessageHandler {
                     // 删除关键词
                     match self.delete_keyword_reply(message.chat.id, keywords.clone()).await {
                         Ok(true) => {
-                            self.send_reply(api, message.chat.id, &format!("关键词 <code>{}</code> 已删除成功！", keywords)).await?;
+                            self.send_reply(api, message.chat.id, &format!("关键词 <code>{}</code> 已删除成功！", keywords), None).await?;
                         }
                         Ok(false) => {
-                            self.send_reply(api, message.chat.id, &format!("未找到关键词 <code>{}</code>", keywords)).await?;
+                            self.send_reply(api, message.chat.id, &format!("未找到关键词 <code>{}</code>", keywords), None).await?;
                         }
                         Err(e) => {
                             eprintln!("删除关键词时出错: {}", e);
-                            self.send_reply(api, message.chat.id, "删除关键词时出错，请稍后重试").await?;
+                            self.send_reply(api, message.chat.id, "删除关键词时出错，请稍后重试", None).await?;
                         }
                     }
                 }
@@ -117,7 +117,7 @@ impl MessageHandler {
                 "/del_all" => {
                     // 检查用户是否为管理员
                     if !self.is_admin(&api, message).await? {
-                        self.send_reply(api, message.chat.id, "只有管理员才能使用此命令").await?;
+                        self.send_reply(api, message.chat.id, "只有管理员才能使用此命令", None).await?;
                         return Ok(());
                     }
                     
@@ -125,19 +125,19 @@ impl MessageHandler {
                     match self.delete_all_keywords(message.chat.id).await {
                         Ok(count) => {
                             if count > 0 {
-                                self.send_reply(api, message.chat.id, &format!("已删除 {} 个关键词！", count)).await?;
+                                self.send_reply(api, message.chat.id, &format!("已删除 {} 个关键词！", count), None).await?;
                             } else {
-                                self.send_reply(api, message.chat.id, "当前群组没有设置任何关键词").await?;
+                                self.send_reply(api, message.chat.id, "当前群组没有设置任何关键词", None).await?;
                             }
                         }
                         Err(e) => {
                             eprintln!("删除所有关键词时出错: {}", e);
-                            self.send_reply(api, message.chat.id, "删除关键词时出错，请稍后重试").await?;
+                            self.send_reply(api, message.chat.id, "删除关键词时出错，请稍后重试", None).await?;
                         }
                     }
                 }
                 "/help" => {
-                    self.send_reply(api, message.chat.id, "可用命令:\n/add &lt;关键词&gt; &lt;回复内容&gt; - 添加关键词回复（仅管理员）\n/del &lt;关键词&gt; - 删除关键词回复（仅管理员）\n/del_all - 删除当前群组的所有关键词（仅管理员）\n/all - 查看当前群组的所有关键词\n/help - 显示帮助信息").await?;
+                    self.send_reply(api, message.chat.id, "可用命令:\n/add &lt;关键词&gt; &lt;回复内容&gt; - 添加关键词回复（仅管理员）\n/del &lt;关键词&gt; - 删除关键词回复（仅管理员）\n/del_all - 删除当前群组的所有关键词（仅管理员）\n/all - 查看当前群组的所有关键词\n/help - 显示帮助信息", None).await?;
                 }
                 _ => {
                     // 未知命令，不进行回应
@@ -159,7 +159,12 @@ impl MessageHandler {
         
         for reply in replies {
             if text.contains(&reply.keywords) {
-                self.send_reply(api, message.chat.id, &reply.reply).await?;
+                let trigger_message_id = if text == reply.keywords {
+                    Some(message.message_id)
+                } else {
+                    None
+                };
+                self.send_reply(api, message.chat.id, &reply.reply, trigger_message_id).await?;
                 return Ok(());
             }
         }
@@ -244,13 +249,13 @@ impl MessageHandler {
             .await?;
         
         if replies.is_empty() {
-            self.send_reply(api, chat_id, "当前群组还没有设置任何关键词回复。").await?;
+            self.send_reply(api, chat_id, "当前群组还没有设置任何关键词回复。", None).await?;
         } else {
             let mut message = "<b>当前群组的关键词列表:</b>\n\n".to_string();
             for reply in replies.iter() {
                 message.push_str(&format!("<code>{}</code>\n", reply.keywords));
             }
-            self.send_reply(api, chat_id, &message).await?;
+            self.send_reply(api, chat_id, &message, None).await?;
         }
         
         Ok(())
@@ -393,7 +398,13 @@ impl MessageHandler {
         Ok(utf8_offset)
     }
     
-    async fn send_reply(&self, api: Bot, chat_id: i64, text: &str) -> Result<()> {
+    async fn send_reply(
+        &self,
+        api: Bot,
+        chat_id: i64,
+        text: &str,
+        trigger_message_id: Option<i32>,
+    ) -> Result<()> {
         let reply_params = SendMessageParams::builder()
             .chat_id(chat_id)
             .text(text)
@@ -411,6 +422,15 @@ impl MessageHandler {
                         .build();
                     if let Err(e) = api.delete_message(&delete_params).await {
                         eprintln!("自动删除消息时出错: {}", e);
+                    }
+                    if let Some(trigger_id) = trigger_message_id {
+                        let delete_params = DeleteMessageParams::builder()
+                            .chat_id(chat_id)
+                            .message_id(trigger_id)
+                            .build();
+                        if let Err(e) = api.delete_message(&delete_params).await {
+                            eprintln!("自动删除触发消息时出错: {}", e);
+                        }
                     }
                 });
             }
